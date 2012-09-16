@@ -192,7 +192,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                 $( app.reload );
                 $( app.new );
             });
-            $( 'header section .logout' ).bind( 'click', function() {
+            $( 'header .logout' ).bind( 'click', function() {
                 $( app.reload );
                 $( app.logout );
                 $( app.settings );
