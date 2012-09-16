@@ -254,23 +254,26 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             socket.on( 'leave conversation', function(data) {
                 $( app.removeUser( data.username, data.conversation ) );
             });
+        },
+        resize: function() {
+            $( '#main sidebar, #main section' ).css( 'height', 'auto' );
+            $( '#main sidebar' ).height( $( window ).height() - 83 );
+            $( '#main section' ).height( $( window ).height() - 83 );
+            $( '#main section article' ).width( $( window ).width() - 200 );
+            $( '#main section .chat ul li div:nth-child(2)' ).width( $( window ).width() - 280 );
+            if( !$( '.chat' ).hasClass( 'hidden' ) )
+                $( '#main section' ).animate({ scrollTop: $( '#main section article.chat' ).height() }, 300);
         }
     };
 
 $( window ).load( function() {
 	$( app.load );
 
-	setTimeout( function() {
-		$( this ).trigger( 'resize' );
-	}, 300 );
+	setTimeout( function() { // Reasonably high timeout (1s) to make sure it happens correctly
+		$( app.resize );
+	}, 1000 );
 });
 
 $( window ).bind( 'resize', function(){
-	$( '#main sidebar, #main section' ).css( 'height', 'auto' );
-	$( '#main sidebar' ).height( $( window ).height() - 83 );
-	$( '#main section' ).height( $( window ).height() - 83 );
-    $( '#main section article' ).width( $( window ).width() - 200 );
-    $( '#main section .chat ul li div:nth-child(2)' ).width( $( window ).width() - 280 );
-    if( !$( '.chat' ).hasClass( 'hidden' ) )
-        $( '#main section' ).animate({ scrollTop: $( '#main section article.chat' ).height() }, 300);
+	$( app.resize );
 });
