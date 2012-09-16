@@ -1,0 +1,345 @@
+@import compass/css3
+
+//-----------------------------------------------
+// The following html5-boilerplate styles should
+// probably be customized for each site
+//-----------------------------------------------
+body, select, input, textarea
+	color: $font-color
+	// Set your base font here, to apply evenly
+	font:
+		family: $base-font-family
+		size: $base-font-size
+
+h1, h2, h3
+	font-family: $base-font-family
+
+//-----------------------------------
+// Add your own custom styles below
+//-----------------------------------
+
+*
+	margin: 0
+
+	//&:not(html)
+	//	@include transform( translate3d(0, 0, 0) )
+
+html, body
+	height: 100%
+
+ul
+	margin: 0
+	padding: 0
+	list-style: none
+
+input[type="email"],
+input[type="text"],
+input[type="url"],
+input[type="phone"],
+input[type="number"],
+#url
+	border: 1px solid #b3b3b3
+	border-radius: 2px
+	background: white
+	color: black
+	padding: 10px
+	height: 15px
+	line-height: 13px
+	-webkit-appearance: textfield
+	box-sizing: content-box
+	min-width: 200px
+
+	&::-webkit-input-placeholder
+		color: #bcbcbc
+
+	&:focus
+		outline: none
+		box-shadow: 0 0 4px 0px rgba(0, 0, 0, 0.2)
+
+header > sidebar ul li,
+header > section article ul li,
+input[type="submit"]
+	border-radius: 2px
+	border: 1px solid #c4c4c4
+	background-color: #f1f1f1
+	@include background-image( linear-gradient(top, rgb(241, 241, 241), rgb(231, 231, 231) ) )
+	width: 30px
+	height: 30px
+	margin-right: 8px
+	float: left
+	position: relative
+	cursor: pointer
+	@include transition( all 0.3s ease-in-out )
+
+	&:last-child
+		margin-right: 0
+
+	&:hover
+		@include transition( all 0.3s ease-in-out )
+		box-shadow: inset 0 0 2px 26px rgba( 255, 255, 255, 0.5 )
+
+	span
+		position: absolute
+		top: 7px
+		left: 7px
+		color: #989898
+
+input[type="submit"]
+	width: auto
+	padding-right: 15px
+	padding-left: 15px
+
+header
+	height: auto
+	border-bottom: 1px solid #c4c4c4
+	box-shadow: 0 3px 3px -2px #EDEDED
+	background: #fff
+	position: relative
+	@include clear
+
+	&:before
+		content:  ' '
+		height: 3px
+		background: #db4c3e
+		position: absolute
+		left: 0
+		top: 0
+		right: 0
+		width: 100%
+
+
+	> sidebar
+		width: 199px
+		float: left
+		border-right: 1px solid #c4c4c4
+		box-shadow: inset -3px 0 3px -2px #EDEDED
+		height: 100%
+
+		ul
+			padding: 25px 23px
+			@include clear
+
+	> section
+		padding: 11px 15px
+		float: left
+
+		article
+			width: 100%
+			@include clear
+
+			img
+				float: left
+				border-radius: 2px
+
+			h1
+				float: left
+				color: #404040
+				font:
+					weight: lighter
+				margin: 0
+				padding: 9px 15px
+				position: relative
+
+				span
+					width: 5px
+					height: 5px
+					border-radius: 50%
+					border: 3px solid #3a9218
+					display: inline-block
+					background: white
+					position: absolute
+					right: -5px
+					top: 23px
+
+			ul
+				padding: 25px 23px
+				position: absolute
+				right: 0
+				top: 0
+				@include clear
+
+#main
+	@include clear
+	height: auto
+	box-shadow: 0 3px 3px -2px #EDEDED
+	background: #fff
+	position: relative
+
+	> sidebar
+		width: 199px
+		float: left
+		border-right: 1px solid #c4c4c4
+		box-shadow: inset -3px 0 3px -2px #EDEDED
+		height: 100%
+		background: #fbfbfb
+
+		ul
+			@include clear
+
+			li
+				display: block
+				width: 100%
+				padding: 8px 13px
+				@include clear
+
+				span
+					float: left
+					background: white
+					width: 5px
+					height: 5px
+					border-radius: 50%
+					border: 3px solid #3a9218
+					margin-top: 11px
+					margin-right: 8px
+
+					&.inactive
+						border-color: #fe9931
+
+					&.away
+						border-color: #d94e3b
+
+				img
+					border-radius: 2px
+					margin: 0
+					padding: 0
+					border: none
+					outline: none
+					float: left
+					margin-right: 8px
+
+
+				h3
+					float: left
+					color: #676767
+					font:
+						weight: lighter
+						size: 13px
+					margin: 8px 0 0
+					padding: 0
+
+		aside
+			margin-top: 15px
+			padding-top: 15px
+			@include clear
+			background: #fbfbfb
+			border-top: 1px solid #d6d6d6
+			box-shadow: inset 0 1px 1px 0 rgba( 255, 255, 255, 1 )
+
+			span
+				display: block
+				color: #7f7f7f
+				padding: 8px 13px 5px
+
+			a
+				display: block
+				cursor: pointer
+				padding: 5px 13px
+				color: #999999
+
+				&.active
+					background: white
+					border-top: 1px solid #b2b2b2
+					border-bottom: 1px solid #b2b2b2
+					color: black
+					margin-right: -1px
+
+	> section
+		@include clear
+		position: relative
+		overflow: auto
+
+		article
+			float: left
+			@include clear
+			min-width: 300px
+
+			&.show
+				display: block
+
+			&.chat
+				margin: 0
+				padding: 0 0 65px
+				position: relative
+
+				ul
+					border-bottom: 1px solid #cccccc
+					li
+						@include clear
+						border-bottom: 1px solid #e5e5e5
+
+						&:last-child
+							border-bottom: 0
+
+						div
+							&:nth-child(1) // img
+								float: left
+
+								&:after
+									content: ' '
+									width: 10px
+									height: 10px
+									display: block
+									margin: 0
+									padding: 0
+
+								img
+									width: 50px
+									height: 50px
+									margin: 15px 15px 0 15px
+									display: block
+
+							&:nth-child(2) // message
+								float: left
+
+								span
+									padding: 5px
+									color: #c7c7c7
+									font-size: 12px
+									display: inline-block
+
+									&:first-child
+										padding: 15px 5px 10px
+
+									strong
+										color: #404040
+										font-weight: lighter
+										font-size: 12px
+										margin-right: 3px
+
+								p // Message stuff
+									color: #656565
+									font-size: 12px
+									padding: 0 5px 5px
+									margin: 0
+									display: block
+
+									&:last-child
+										padding-bottom: 15px
+
+				input
+					position: absolute
+					bottom: 0
+					left: 0
+					right: 0
+					border: 15px solid #fbfbfb
+					box-shadow: inset 0 0 0px 1px #B3B3B3
+					border-radius: 2px
+
+			&.settings,
+			&.invite,
+			&.new
+
+				ul
+					padding: 15px 30px
+					li
+						padding: 15px 0
+						label
+							display: block
+
+						input
+							display: block
+							&[type="email"],
+							&[type="text"],
+							&[type="url"]
+
+							&[type="submit"]
