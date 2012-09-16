@@ -277,11 +277,9 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                         mg.notify( data.username, data.message );
                     }
 
-                    var init = true;
-                    console.log( ( $( '#main section' ).scrollTop() + 327 ) );
-                    console.log( $( '#main section article.chat' ).height() );
-                    if( ( $( '#main section' ).scrollTop() + 327 ) == $( '#main section article.chat' ).height() )
-                        init = false;
+                    var init = false;
+                    if( ( $( '#main section' ).scrollTop() + 500 ) < $( '#main section article.chat' ).height() )
+                        init = true;
 
                     $( app.addMessage( data.username, data.message, data.image, data.date, false, init ) );
                 }
