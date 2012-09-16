@@ -1,6 +1,49 @@
 var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: true }),
     user   = JSON.parse( localStorage.getItem( 'user' ) ),
     conv   = JSON.parse( localStorage.getItem( 'conv' ) ),
+    hasMG  = false,
+    mg     = { // This is the macgap handler
+        load: function() {
+            if( typeof macgap === 'undefined' ) {
+                hasMG = false;
+            } else {
+                hasMG = true;
+            }
+        },
+        notify: function( calledTitle, calledContent ) {
+            if( hasMG ) {
+                macgap.notice.notify({
+                    title: calledTitle,
+                    content: calledContent
+                });
+            }
+        },
+        badge: function( amount ) {
+            if( hasMG ) {
+                macgap.dock.badge = amount;
+            }
+        },
+        quit: function() {
+            if( hasMG ) {
+                macgap.app.terminate();
+            }
+        },
+        activate: function() {
+            if( hasMG ) {
+                macgap.app.activate();
+            }
+        },
+        hide: function() {
+            if( hasMG ) {
+                macgap.app.hide();
+            }
+        },
+        beep: function() {
+            if( hasMG ) {
+                macgap.app.beep();
+            }
+        }
+    },
     app    = {
     	load: function() {
             $( app.listeners );
@@ -189,6 +232,13 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                 }
             });
 
+            socket.on( 'usernames', function(data) {
+                $.each( data.usernames, function(i) {
+                    username = data.usernames[i];
+                    $( app.addUser( username, data.conversation ) );
+                });
+            })
+
             socket.on( 'conversation', function(data) {
                 var convData = {};
                 convData[ 'channel' ] = data.channel;
@@ -200,25 +250,6 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
 
                 $( app.reload );
                 $( app.chat( data.conversation ) );
-
-                var username = '',
-                    globalop = false,
-                    op       = false;
-
-                $.each( data.usernames, function(i) {
-                    username = data.usernames[i];
-                    $( app.addUser( username, data.conversation ) );
-                });
-
-                $.each( data.globalop, function(i) {
-                    globalop = data.globalop[i];
-                    $( app.addUser( globalop, data.conversation ) );
-                });
-
-                $.each( data.op, function(i) {
-                    op = data.op[i];
-                    $( app.addUser( op, data.conversation ) );
-                });
 
                 $( 'header sidebar ul' ).append(
                     $( '<li />' ).addClass( 'chat' ).append(
@@ -234,6 +265,10 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                 if( data.provider == 'internal' ) {
                     // 
                 } else {
+                    // Notify user of name calling
+                    if( data.message.indexOf( user.username ) >= 0 ) {
+                        mg.notify( data.username, data.message );
+                    }
                     $( app.addMessage( data.username, data.message, data.image, data.date, false, false ) );
                 }
             });
@@ -273,6 +308,13 @@ $( window ).load( function() {
     setTimeout( function() { // Reasonably high timeout (1s) to make sure it happens correctly
         $( app.resize );
     }, 1000 );
+
+    $( mg.load );
+    if( hasMG ) {
+        document.addEventListener( 'wake', function(){ 
+            $( app.load );
+        }, true);
+    }
 });
 
 $( window ).bind( 'resize', function(){
