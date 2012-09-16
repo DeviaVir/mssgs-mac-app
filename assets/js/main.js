@@ -52,11 +52,12 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             var imgDiv = $( '<div />' ),
                 li     = $( '<li />' ).attr( 'data-username', who ),
                 p      = $( '<p />' ).text( text ),
-                d      = new Date( ( date * 1000 ) );
+                d      = new Date( ( date * 1000 ) ),
+                dateV  = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ' ' + ( '0' + d.getDate() ).slice(-2) + '/' + ( '0' + d.getMonth() ).slice(-2) + '/' + d.getFullYear();
 
             if( $( '#main section .chat ul li:last-child' ).attr( 'data-username' ) == who ) {
                 $( '#main section .chat ul li:last-child div:nth-child(2)' ).append(
-                    $( '<span />' ).text( d.getHours() + ':' + d.getMinutes() + ' ' + d.getDate() + '/' + d.getMonth() + '/' + d.getFullYear() )
+                    $( '<span />' ).text( dateV )
                 );
                 $( '#main section .chat ul li:last-child div:nth-child(2)' ).append( p );
             } else {
@@ -73,7 +74,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                 li.append( imgDiv );
                 li.append(
                     $( '<div />' ).append(
-                        $( '<span />' ).text( ' - ' + d.getHours() + ':' + d.getMinutes() + ' ' + d.getDate() + '/' + d.getMonth() + '/' + d.getFullYear() ).prepend(
+                        $( '<span />' ).text( ' - ' + dateV ).prepend(
                             $( '<strong />' ).text( who )
                         )
                     ).append(
