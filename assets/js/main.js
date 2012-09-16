@@ -4,8 +4,27 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
     hasMG  = false,
     global = { // Cool global functions
         findLinks: function(text) {
-            var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-            return text.replace(exp,"<a href='$1' target='_blank'>$1</a>"); 
+            var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
+                img = false;
+            text.replace( exp, function( s, m1 ) {
+                console.log( m1 );
+                console.log( global.IsValidImageUrl( m1 ) );
+                if( global.IsValidImageUrl( m1 ) )
+                    img = true;
+            } );
+            return text.replace( exp, "<a href='$1' target='_blank'>" + ( img ? "<img src='$1' />" : "$1" ) + "</a>" ); 
+        },
+        IsValidImageUrl: function(url) {
+            var isImg = false;
+            switch( url.substr(-3).toLowerCase() ) {
+                case 'png':
+                case 'jpg':
+                case 'gif':
+                case 'bmp':
+                    isImg = true;
+                break;
+            }
+            return( isImg );
         }
     },
     mg     = { // This is the macgap handler
@@ -66,12 +85,20 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
         new: function() {
             $( '#main article.new' ).removeClass( 'hidden' );
             $( '#main .new [name="new"]' ).bind( 'click', function() {
-                socket.emit( 'create conversation' );
+                if( conv.conversation )  {
+                    $( app.error( 'Conversation already exists. Please log out first.' ) );
+                } else {
+                    socket.emit( 'create conversation' );
+                }
             });
             $( '#main .new [name="join"]' ).bind( 'click', function() {
-                if( $( '#main .new [name="join_password"]' ).val() )
-                    localStorage.setItem( 'password', $( '#main .new [name="join_password"]' ).val() );
-                socket.emit( 'join conversation', { 'conversation': $( '#main .new [name="join_id"]' ).val(), 'password': ( $( '#main .new [name="join_password"]' ).val() ? $( '#main .new [name="join_password"]' ).val() : false ) } );
+                if( conv && conv.conversation ) {
+                    $( app.error( 'Conversation already exists. Please log out first.' ) );
+                } else {
+                    if( $( '#main .new [name="join_password"]' ).val() )
+                        localStorage.setItem( 'password', $( '#main .new [name="join_password"]' ).val() );
+                    socket.emit( 'join conversation', { 'conversation': $( '#main .new [name="join_id"]' ).val(), 'password': ( $( '#main .new [name="join_password"]' ).val() ? $( '#main .new [name="join_password"]' ).val() : false ) } );
+                }
             });
 
         },
@@ -278,9 +305,6 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     }
 
                     var init = false;
-                    if( ( $( '#main section' ).scrollTop() + 500 ) < $( '#main section article.chat' ).height() )
-                        init = true;
-
                     $( app.addMessage( data.username, data.message, data.image, data.date, false, init ) );
                 }
             });
@@ -302,6 +326,12 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             socket.on( 'leave conversation', function(data) {
                 $( app.removeUser( data.username, data.conversation ) );
             });
+
+            if( hasMG ) {
+                document.addEventListener( 'wake', function(){ 
+                    $( app.load );
+                }, true);
+            }
         },
         resize: function() {
             $( '#main sidebar, #main section' ).css( 'height', 'auto' );
@@ -322,11 +352,6 @@ $( window ).load( function() {
     }, 1000 );
 
     $( mg.load );
-    if( hasMG ) {
-        document.addEventListener( 'wake', function(){ 
-            $( app.load );
-        }, true);
-    }
 });
 
 $( window ).bind( 'resize', function(){
