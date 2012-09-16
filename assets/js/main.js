@@ -46,7 +46,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             }
         },
         removeUser: function( username, conversation ) {
-            $( '#main sidebar ul li[data-username="' + username + '"]' ).remove;
+            $( '#main sidebar ul li[data-username="' + username + '"]' ).remove();
         },
         addMessage: function( who, text, avatar, date, me, init ) {
             var imgDiv = $( '<div />' ),
@@ -99,7 +99,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     $( this ).val( '' );
                 }
             });
-            $( '#main section' ).animate({ scrollTop: $( '#main section article.chat' ).height() }, 300);
+            $( app.resize );
         },
         invite: function() {
             $( '#main article.invite' ).removeClass( 'hidden' );
@@ -269,10 +269,10 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
 
 $( window ).load( function() {
 	$( app.load );
-
-	setTimeout( function() { // Reasonably high timeout (1s) to make sure it happens correctly
-		$( app.resize );
-	}, 1000 );
+    // Resize the window and scroll to bottom
+    setTimeout( function() { // Reasonably high timeout (1s) to make sure it happens correctly
+        $( app.resize );
+    }, 1000 );
 });
 
 $( window ).bind( 'resize', function(){
