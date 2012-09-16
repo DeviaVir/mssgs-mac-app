@@ -2,6 +2,12 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
     user   = JSON.parse( localStorage.getItem( 'user' ) ),
     conv   = JSON.parse( localStorage.getItem( 'conv' ) ),
     hasMG  = false,
+    global = { // Cool global functions
+        findLinks: function(text) {
+            var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+            return text.replace(exp,"<a href='$1' target='_blank'>$1</a>"); 
+        }
+    },
     mg     = { // This is the macgap handler
         load: function() {
             if( typeof macgap === 'undefined' ) {
@@ -92,11 +98,12 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             $( '#main sidebar ul li[data-username="' + username + '"]' ).remove();
         },
         addMessage: function( who, text, avatar, date, me, init ) {
-            var imgDiv = $( '<div />' ),
-                li     = $( '<li />' ).attr( 'data-username', who ),
-                p      = $( '<p />' ).text( text ),
-                d      = new Date( ( date * 1000 ) ),
-                dateV  = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ' ' + ( '0' + d.getDate() ).slice(-2) + '/' + ( '0' + d.getMonth() ).slice(-2) + '/' + d.getFullYear();
+            var imgDiv  = $( '<div />' ),
+                li      = $( '<li />' ).attr( 'data-username', who ),
+                message = global.findLinks( text ),
+                p       = $( '<p />' ).html( message ),
+                d       = new Date( ( date * 1000 ) ),
+                dateV   = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ' ' + ( '0' + d.getDate() ).slice(-2) + '/' + ( '0' + d.getMonth() ).slice(-2) + '/' + d.getFullYear();
 
             if( $( '#main section .chat ul li:last-child' ).attr( 'data-username' ) == who ) {
                 $( '#main section .chat ul li:last-child div:nth-child(2)' ).append(
@@ -263,13 +270,20 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
 
             socket.on( 'message', function( data ) {
                 if( data.provider == 'internal' ) {
-                    // 
+                    $( mg.beep );
                 } else {
                     // Notify user of name calling
                     if( data.message.indexOf( user.username ) >= 0 ) {
                         mg.notify( data.username, data.message );
                     }
-                    $( app.addMessage( data.username, data.message, data.image, data.date, false, false ) );
+
+                    var init = true;
+                    console.log( ( $( '#main section' ).scrollTop() + 327 ) );
+                    console.log( $( '#main section article.chat' ).height() );
+                    if( ( $( '#main section' ).scrollTop() + 327 ) == $( '#main section article.chat' ).height() )
+                        init = false;
+
+                    $( app.addMessage( data.username, data.message, data.image, data.date, false, init ) );
                 }
             });
 

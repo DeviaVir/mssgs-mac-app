@@ -21,8 +21,8 @@ h1, h2, h3
 *
 	margin: 0
 
-	//&:not(html)
-	//	@include transform( translate3d(0, 0, 0) )
+	&:not(html)
+		@include transform( translate3d(0, 0, 0) )
 
 html, body
 	height: 100%
@@ -57,7 +57,7 @@ input[type="number"],
 		box-shadow: 0 0 4px 0px rgba(0, 0, 0, 0.2)
 
 header > sidebar ul li,
-header > section article ul li,
+header > ul li,
 input[type="submit"]
 	border-radius: 2px
 	border: 1px solid #c4c4c4
@@ -96,6 +96,7 @@ header
 	background: #fff
 	position: relative
 	@include clear
+	z-index: 1
 
 	&:before
 		content:  ' '
@@ -106,6 +107,7 @@ header
 		top: 0
 		right: 0
 		width: 100%
+		z-index: 50000
 
 
 	> sidebar
@@ -152,12 +154,12 @@ header
 					right: -5px
 					top: 23px
 
-			ul
-				padding: 25px 23px
-				position: absolute
-				right: 0
-				top: 0
-				@include clear
+	.actions
+		padding: 25px 23px
+		position: absolute
+		right: 0
+		top: 0
+		@include clear
 
 #main
 	@include clear
@@ -316,6 +318,14 @@ header
 
 									&:last-child
 										padding-bottom: 15px
+
+									a
+										color: #4f90f4
+										text-decoration: none
+										outline: none
+
+										&:hover
+											color: #db4c3e
 
 				input
 					position: absolute
