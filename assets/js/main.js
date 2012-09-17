@@ -1,6 +1,7 @@
 var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: true }),
     user   = JSON.parse( localStorage.getItem( 'user' ) ),
     conv   = JSON.parse( localStorage.getItem( 'conv' ) ),
+    inactive = false,
     hasMG  = false,
     global = { // Cool global functions
         findLinks: function(text) {
@@ -237,7 +238,8 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     $( 'header section article img' ).removeClass( 'hidden' ).attr( 'src', user.avatar );
                     $( app.reload );
                     if( conv && conv.conversation ) {
-                       socket.emit( 'join conversation', { 'conversation': conv.conversation, 'password': ( localStorage.getItem( 'password' ) ? localStorage.getItem( 'password' ) : false ) } );
+                        $( app.chat( conv.conversation ) );
+                        socket.emit( 'join conversation', { 'conversation': conv.conversation, 'password': ( localStorage.getItem( 'password' ) ? localStorage.getItem( 'password' ) : false ) } );
                     } else {
                         $( app.new );
                     }
@@ -250,6 +252,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             socket.on( 'credentials', function(data) {
                 if( data.valid ) {
                     if( user && user.username ) {
+                        console.log( user );
                         socket.emit( 'auth', {
                             'username': user.username,
                             'avatar': user.avatar,
@@ -258,11 +261,6 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                         $( 'header section article h1' ).removeClass( 'hidden' ).text( user.username ).append( $( '<span />' ).addClass( 'active' ) );
                         if( user.avatar )
                             $( 'header section article img' ).removeClass( 'hidden' ).attr( 'src', user.avatar );
-                        
-                        if( conv && conv.conversation )
-                            $( app.chat( conv.conversation ) );
-                        else
-                            $( app.new );
                     } else {
                         $( app.settings );
                     }
@@ -324,7 +322,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     $( mg.beep );
                 } else {
                     // Notify user of name calling
-                    if( data.message.indexOf( user.username ) >= 0 ) {
+                    if( data.message.indexOf( user.username ) >= 0 || inactive ) {
                         mg.notify( data.username, data.message );
                     }
 
@@ -380,13 +378,18 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
     };
 
 $( window ).load( function() {
-	$( app.load );
+    $( app.load );
     // Resize the window and scroll to bottom
     setTimeout( function() { // Reasonably high timeout (1s) to make sure it happens correctly
         $( app.resize );
     }, 1000 );
-
     $( mg.load );
+}).bind( 'blur', function(){
+        inactive = true;
+}).bind( 'focus', function(){
+        inactive = false;
+}).bind( 'click', function(){
+        inactive = false;
 });
 
 $( window ).bind( 'resize', function(){
