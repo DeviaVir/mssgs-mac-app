@@ -258,6 +258,11 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                         $( 'header section article h1' ).removeClass( 'hidden' ).text( user.username ).append( $( '<span />' ).addClass( 'active' ) );
                         if( user.avatar )
                             $( 'header section article img' ).removeClass( 'hidden' ).attr( 'src', user.avatar );
+                        
+                        if( conv && conv.conversation )
+                            $( app.chat( conv.conversation ) );
+                        else
+                            $( app.new );
                     } else {
                         $( app.settings );
                     }
