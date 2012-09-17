@@ -327,7 +327,8 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     }
 
                     var currentTime = Math.floor(new Date().getTime()/1000);
-                    if( $( '#main sidebar ul li[data-username="' + data.username + '"]' ).attr( 'data-date' ) )
+                    $( '#main sidebar ul li[data-username="' + data.username + '"]' ).attr( 'data-date', currentTime );
+                    $( '#main sidebar ul li[data-username="' + data.username + '"] span.inactive,#main sidebar ul li[data-username="' + data.username + '"] span.away' ).removeClass( 'inactive' ).removeClass( 'away' ).addClass( 'active' );
 
                     var init = false;
                     $( app.addMessage( data.username, data.message, data.image, data.date, false, init ) );
