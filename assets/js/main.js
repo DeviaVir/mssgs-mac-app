@@ -7,8 +7,6 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
                 img = false;
             text.replace( exp, function( s, m1 ) {
-                console.log( m1 );
-                console.log( global.IsValidImageUrl( m1 ) );
                 if( global.IsValidImageUrl( m1 ) )
                     img = true;
             } );
@@ -85,7 +83,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
         new: function() {
             $( '#main article.new' ).removeClass( 'hidden' );
             $( '#main .new [name="new"]' ).bind( 'click', function() {
-                if( conv.conversation )  {
+                if( conv && conv.conversation )  {
                     $( app.error( 'Conversation already exists. Please log out first.' ) );
                 } else {
                     socket.emit( 'create conversation' );
@@ -132,6 +130,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                 d       = new Date( ( date * 1000 ) ),
                 dateV   = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ' ' + ( '0' + d.getDate() ).slice(-2) + '/' + ( '0' + d.getMonth() ).slice(-2) + '/' + d.getFullYear();
 
+            $( '#main sidebar ul li[data-username="' + who + '"]' ).attr( 'data-date', date )
             if( $( '#main section .chat ul li:last-child' ).attr( 'data-username' ) == who ) {
                 $( '#main section .chat ul li:last-child div:nth-child(2)' ).append(
                     $( '<span />' ).text( dateV )
@@ -198,6 +197,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
     	},
         logout: function() {
             user = 0;
+            conv = 0;
             localStorage.removeItem( 'user' );
             localStorage.removeItem( 'conv' );
             localStorage.removeItem( 'password' );
@@ -277,6 +277,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                 var convData = {};
                 convData[ 'channel' ] = data.channel;
                 convData[ 'conversation' ] = data.conversation;
+                convData[ 'activity' ] = data.activity;
                 if( localStorage.getItem( 'password' ) )
                     convData[ 'password' ] = localStorage.getItem( 'password' );
                 localStorage.setItem( 'conv', JSON.stringify( convData ) );
@@ -293,6 +294,24 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                         $( app.chat( data.conversation ) )
                     })
                 );
+
+                setTimeout( function() {
+                    $.each( conv.activity, function(i,v) {
+                        var userLi = $( '#main sidebar ul li[data-username="' + i + '"]' ).attr( 'data-date', v );   
+
+                        setInterval( function() {
+                            var currentTime = Math.floor(new Date().getTime()/1000);
+                            if( (currentTime - conv.activity[i]) > (60*60) )
+                                userLi.children( 'span' ).removeClass( 'active' ).addClass( 'away' ).removeClass( 'inactive' );
+                            else if( (currentTime - conv.activity[i]) > (60*15) )
+                                userLi.children( 'span' ).removeClass( 'active' ).removeClass( 'away' ).addClass( 'inactive' );
+                            else if( (currentTime - conv.activity[i]) > (60*5) )
+                                userLi.children( 'span' ).removeClass( 'active' ).removeClass( 'away' ).addClass( 'inactive' );
+                            else
+                                userLi.children( 'span' ).addClass( 'active' ).removeClass( 'away' ).removeClass( 'inactive' );
+                        }, 1000 );                     
+                    });
+                }, 1000 );
             });
 
             socket.on( 'message', function( data ) {
@@ -303,6 +322,9 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     if( data.message.indexOf( user.username ) >= 0 ) {
                         mg.notify( data.username, data.message );
                     }
+
+                    var currentTime = Math.floor(new Date().getTime()/1000);
+                    if( $( '#main sidebar ul li[data-username="' + data.username + '"]' ).attr( 'data-date' ) )
 
                     var init = false;
                     $( app.addMessage( data.username, data.message, data.image, data.date, false, init ) );
@@ -325,6 +347,14 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
 
             socket.on( 'leave conversation', function(data) {
                 $( app.removeUser( data.username, data.conversation ) );
+            });
+
+            socket.on( 'connect', function() {
+                $( 'header section article h1 span' ).removeClass( 'away' ).removeClass( 'inactive' ).addClass( 'active' );
+            });
+
+            socket.on( 'disconnect', function() {
+                $( 'header section article h1 span' ).removeClass( 'active' ).removeClass( 'inactive' ).addClass( 'away' );
             });
 
             if( hasMG ) {
