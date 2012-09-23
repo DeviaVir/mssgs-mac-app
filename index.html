@@ -9,85 +9,91 @@
         <link rel="stylesheet" href="assets/css/main.css">
     </head>
     <body>
-        <header>
-            <sidebar>
-                <ul>
-                    <!--<li class="invite">
-                        <span class="icon-user"></span>
-                    </li>-->
-                    <li class="settings">
-                        <span class="icon-wrench"></span>
+        <div id="container">
+            <header>
+                <sidebar>
+                    <ul>
+                        <!--<li class="invite">
+                            <span class="icon-user"></span>
+                        </li>-->
+                        <li class="settings">
+                            <span class="icon-wrench"></span>
+                        </li>
+                        <!--<li class="new">
+                            <span class="icon-plus"></span>
+                        </li>-->
+                    </ul>
+                </sidebar>
+                <section>
+                    <article>
+                        <img class="hidden" width="57" height="57" />
+                        <h1 class="hidden"></h1>
+                    </article>
+                </section>
+                <ul class="actions">
+                    <li class="logout">
+                        <span class="icon-signout"></span>
                     </li>
-                    <!--<li class="new">
-                        <span class="icon-plus"></span>
-                    </li>-->
                 </ul>
-            </sidebar>
-            <section>
-                <article>
-                    <img class="hidden" width="57" height="57" />
-                    <h1 class="hidden"></h1>
-                </article>
-            </section>
-            <ul class="actions">
-                <li class="logout">
-                    <span class="icon-signout"></span>
-                </li>
-            </ul>
-        </header>
-        <div id="main">
-            <sidebar>
-                <ul></ul>
-            </sidebar>
-            <section>
-                <article class="chat hidden">
+            </header>
+            <div id="main">
+                <sidebar>
                     <ul></ul>
-                    <input type="text" placeholder="Write a message" name="message" autofocus="autofocus" />
-                </article>
-                <article class="new hidden">
-                    <ul>
-                        <li>
-                            <input type="submit" name="new" value="Create new chat" />
-                        </li>
-                    </ul>
-                    <ul>
-                        <li>
-                            <label for="join_id">Join a chat</label>
-                            <input id="join_id" type="text" name="join_id" placeholder="Enter ID or channel" />
-                            <br />
-                            <input id="join_password" type="text" name="join_password" placeholder="Optionally provide a password" />
-                            <br />
-                            <input type="submit" name="join" value="Join chat" />
-                        </li>
-                    </ul>
-                </article>
-                <article class="settings hidden">
-                    <ul>
-                        <li>
-                            <label for="name">Name</label>
-                            <input id="name" maxlength="25" type="text" autofocus="autofocus" required="required" placeholder="Your desired nickname" name="name" />
-                        </li>
-                        <li>
-                            <label for="name">Avatar</label>
-                            <input id="url" type="url" required="required" placeholder="Avatar URL" name="avatar" />
-                        </li>
-                        <li>
-                            <input type="submit" value="Save" />
-                        </li>
-                    </ul>
-                </article>
-                <article class="invite hidden">
-                    <ul>
-                        <li>
-                            <label for="email">E-mail</label>
-                            <input id="email" type="email" autofocus="autofocus" required="required" placeholder="Type your buddy's e-mail address" name="email" />
-                        </li>
-                        <li>
-                            <input type="submit" value="Invite" />
-                        </li>
-                    </ul>
-                </article>
-            </section>
+                </sidebar>
+                <section>
+                    <article class="chat hidden">
+                        <ul></ul>
+                        <textarea id="textarea" placeholder="Write a message" name="message" autofocus="autofocus"></textarea>
+                    </article>
+                    <article class="new hidden">
+                        <ul>
+                            <li>
+                                <input type="submit" name="new" value="Create new chat" />
+                            </li>
+                        </ul>
+                        <ul>
+                            <li>
+                                <label for="join_id">Join a chat</label>
+                                <input id="join_id" type="text" name="join_id" placeholder="Enter ID or channel" />
+                                <br />
+                                <input id="join_password" type="text" name="join_password" placeholder="Optionally provide a password" />
+                                <br />
+                                <input type="submit" name="join" value="Join chat" />
+                            </li>
+                        </ul>
+                    </article>
+                    <article class="settings hidden">
+                        <ul>
+                            <li>
+                                <label for="name">Name</label>
+                                <input id="name" maxlength="25" type="text" autofocus="autofocus" required="required" placeholder="Your desired nickname" name="name" />
+                            </li>
+                            <li>
+                                <label for="name">Avatar</label>
+                                <input id="url" type="url" required="required" placeholder="Avatar URL" name="avatar" />
+                            </li>
+                            <li>
+                                <label for="notifications" title="leave unchecked to only receive notifications when someone mentions your name">Notifications</label>
+                                <input id="notifications" type="checkbox" name="notifications" />
+                            </li>
+                            <li>
+                                <input type="submit" value="Save" />
+                            </li>
+                        </ul>
+                    </article>
+                    <article class="invite hidden">
+                        <ul>
+                            <li>
+                                <label for="email">E-mail</label>
+                                <input id="email" type="email" autofocus="autofocus" required="required" placeholder="Type your buddy's e-mail address" name="email" />
+                            </li>
+                            <li>
+                                <input type="submit" value="Invite" />
+                            </li>
+                        </ul>
+                    </article>
+                </section>
+            </div>
         </div>
         <script type="text/javascript">
             /*! Socket.IO.min.js build:0.9.6, production. Copyright(c) 2011 LearnBoost <dev@learnboost.com> MIT Licensed */

@@ -27,6 +27,9 @@ h1, h2, h3
 html, body
 	height: 100%
 
+body
+	overflow: hidden
+
 ul
 	margin: 0
 	padding: 0
@@ -88,6 +91,8 @@ input[type="submit"]
 	width: auto
 	padding-right: 15px
 	padding-left: 15px
+
+
 
 header
 	height: auto
@@ -173,6 +178,21 @@ header
 	box-shadow: 0 3px 3px -2px #EDEDED
 	background: #fff
 	position: relative
+
+	&.loading
+		opacity: 0.5
+		position: relative
+
+		&:before
+			content: ' '
+			position: fixed
+			top: 50%
+			left: 50%
+			margin-left: -16px
+			margin-top: -16px
+			width: 32px
+			height: 32px
+			background: transparent url( '../img/loader.gif' ) no-repeat center center
 
 	> sidebar
 		width: 199px
@@ -279,6 +299,9 @@ header
 						&:last-child
 							border-bottom: 0
 
+						&.me
+							background: #f4f4f4
+
 						div
 							&:nth-child(1) // img
 								float: left
@@ -321,6 +344,7 @@ header
 									padding: 0 5px 5px
 									margin: 0
 									display: block
+									max-width: 100%
 
 									img
 										max-width: 100%
@@ -336,14 +360,18 @@ header
 										&:hover
 											color: #db4c3e
 
-				input
+				textarea
 					position: absolute
 					bottom: 0
 					left: 0
 					right: 0
 					border: 15px solid #fbfbfb
 					box-shadow: inset 0 0 0px 1px #B3B3B3
-					border-radius: 2px
+					border-radius: 5px
+					padding: 10px
+					box-sizing: border-box
+					height: 65px
+					resize: none
 
 			&.settings,
 			&.invite,

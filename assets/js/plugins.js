@@ -12,7 +12,51 @@ if (!(window.console && console.log)) {
 }
 
 // Place any jQuery/helper plugins in here.
+var utils = {}, hooks = []
+utils.toArray = function( arg ) {
+        var i, args = []
+        for( i in arg )
+             args.push( arg[i] )
+        return args
+}
+utils.scope = function( target, func ) {
+        return function(){
+                return func.apply( target, arguments )
+        }
+}
 
+// Log
+var empty = '', log = {}
+log.error = function(msg) {
+        log.message.apply( log, ['error', utils.toArray(arguments).join( ' ' ), 0] )
+}
+log.warn = function(msg) {
+        log.message.apply( log, ['warn', utils.toArray(arguments).join( ' ' ), 0] )
+}
+log.info = log.debug = function(msg) {
+        log.message.apply( log, ['info', utils.toArray(arguments).join( ' ' ), 0] )
+}
+log.message = function( type, msg, deep ) {
+        //if( Application.native === true ) return console.log( msg );
+        var prefix, stack, d, f, l, t;
+        try { err; } catch( e ) {
+               try {
+               if( e.stack && navigator.userAgent.indexOf( 'Chrome' ) > -1  ) {
+                       stack = e.stack.split( '\n' ); 
+                       for( d = (deep-3); d < 0; d++ ) 
+                               stack.shift();
+                       line = stack.shift().split( ' ' ); 
+                       f = line[5].split( '.' )[1]; 
+                       l = line.pop(); 
+                       t = l.split( '/intern/' )[1];
+                       t = ( t ? t.split( '.js' )[0] : l ) || 'anon'; 
+                       prefix = t + ':' + f; 
+                }
+                } catch(e) {}
+        } 
+        if( type && msg && 'object' == typeof console )
+                console[( type )]( '[' + Date() + ( prefix ? ' @' + prefix : '' ) + '] ' + msg )
+}
 /*! matchMedia() polyfill - Test a CSS media type/query in JS. Authors & copyright (c) 2012: Scott Jehl, Paul Irish, Nicholas Zakas. Dual MIT/BSD license */
 /*! NOTE: If you're already including a window.matchMedia polyfill via Modernizr or otherwise, you don't need this part */
 window.matchMedia=window.matchMedia||(function(e,f){var c,a=e.documentElement,b=a.firstElementChild||a.firstChild,d=e.createElement("body"),g=e.createElement("div");g.id="mq-test-1";g.style.cssText="position:absolute;top:-100em";d.style.background="none";d.appendChild(g);return function(h){g.innerHTML='&shy;<style media="'+h+'"> #mq-test-1 { width: 42px; }</style>';a.insertBefore(d,b);c=g.offsetWidth==42;a.removeChild(d);return{matches:c,media:h}}})(document);

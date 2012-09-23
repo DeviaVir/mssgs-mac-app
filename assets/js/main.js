@@ -1,7 +1,8 @@
-var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: true }),
+var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: true } ),
     user   = JSON.parse( localStorage.getItem( 'user' ) ),
     conv   = JSON.parse( localStorage.getItem( 'conv' ) ),
     inactive = false,
+    notifications = false,
     hasMG  = false,
     global = { // Cool global functions
         findLinks: function(text) {
@@ -24,6 +25,9 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                 break;
             }
             return( isImg );
+        },
+        capitaliseFirstLetter: function(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
         }
     },
     mg     = { // This is the macgap handler
@@ -70,7 +74,11 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
     },
     app    = {
     	load: function() {
-            $( app.listeners );
+            app.listeners();
+            app.resize();
+
+            // Clear messages
+            $( '#main section .chat ul' ).children().remove();
 
             // Authorize app (and do logic)
             socket.emit( 'credentials', { 'id': '27a803c317a8e4f0071d374d7ceb9082', 'secret': 'SVhbc42YvnJy' } );
@@ -85,14 +93,14 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             $( '#main article.new' ).removeClass( 'hidden' );
             $( '#main .new [name="new"]' ).bind( 'click', function() {
                 if( conv && conv.conversation )  {
-                    $( app.error( 'Conversation already exists. Please log out first.' ) );
+                    app.error( 'Conversation already exists. Please log out first.' );
                 } else {
                     socket.emit( 'create conversation' );
                 }
             });
             $( '#main .new [name="join"]' ).bind( 'click', function() {
                 if( conv && conv.conversation ) {
-                    $( app.error( 'Conversation already exists. Please log out first.' ) );
+                    app.error( 'Conversation already exists. Please log out first.' );
                 } else {
                     if( $( '#main .new [name="join_password"]' ).val() )
                         localStorage.setItem( 'password', $( '#main .new [name="join_password"]' ).val() );
@@ -123,13 +131,195 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
         removeUser: function( username, conversation ) {
             $( '#main sidebar ul li[data-username="' + username + '"]' ).remove();
         },
+        addInternal: function( message, date, init ) {
+            var li   = $( '<li />' ).addClass( 'internal' ),
+                type = message.split( ':' ).shift(),
+                arr  = message.split( ':' ),
+                skip = false,
+                d       = new Date( ( date * 1000 ) ),
+                dateV   = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ' ' + ( '0' + d.getDate() ).slice(-2) + '/' + ( '0' + d.getMonth() ).slice(-2) + '/' + d.getFullYear(),
+                allowScroll = ( $( '#main section' ).scrollTop() == $( '#main section article.chat' ).prop( 'scrollHeight' ) ? true : false );
+            arr.shift();
+            message = arr.join( ':' );
+            message = jQuery.parseJSON(message);
+
+            switch( type ) {
+                case 'join':
+                    type    = 'Joined chat';
+                    message = message.username;
+                break;
+                case 'leave':
+                    type    = 'Leaves chat';
+                    message = message.username;
+                break;
+                case 'opunlock':
+                    skip = true;
+                break;
+                case 'kick':
+                    type    = 'Kicked:';
+                    message = message.username;
+                break;
+            }
+
+            if( !skip ) {
+                li.append(
+                    $( '<div />' )
+                ).append(
+                    $( '<div />' ).append(
+                        $( '<span />' ).text( ': ' + message + ' @ ' + dateV ).prepend(
+                            $( '<strong />' ).text( type )
+                        )
+                    )
+                )
+
+                $( '#main section .chat ul' ).append( li );
+                if( !init/* && allowScroll*/ ) 
+                    app.scroll();
+            }
+        },
+        renderMessage: function( text ) {
+                var text = $( '<pre />' ).text( text ).html(),
+                text =  text.trim().replace( /\n/g, ' <br />\n' ) + ' ', patterns = { 
+                        url: /(\s?)(http\:\/\/|https\:\/\/|ftp\:\/\/|ftps\:\/\/|)(www\.|)([a-zA-Z0-9.\-]{1,})([\.]{1}[a-zA-Z0-9\-\&\~]{2,5})([\.]{1}[a-zA-Z\~\&\']{2,5})?(:[0-9]{0,})?(\/[a-zA-Z0-9\&#!:\.\_\;\~?+{}\{\}=\[\,\'&%@!\-\/]{0,})?(?=\s)/gi,
+                        skype: /skype\:\/\/([a-zA-Z0-9]{1,})/gi,
+                        bold: /\[b\]([^\[]{1,})\[\/b\]/gi,
+                        names: /\[name\]([^\[]{1,})\[\/name\]/gi,
+                        italic: /\[i\]([^\[]{1,})\[\/i\]/gi,
+                        indent: /\[indent\]/gi,
+                        code: /```(\s<br \/>\n)?([^`]+)(\s<br \/>\n)?```/gm,
+                        codeSingle: /`(\s<br \/>\n)?([^`]+)(\s<br \/>\n)?`/gm,
+                        name: /\@([a-z\_A-Zé0-9]{1,})(;\s|:\s|\s?)/gi,
+                        tag: /\#([a-zA-Zé0-9\-]{1,})(\s?)/gi
+                };
+      
+                // Methods
+                var codeblocks = [], urls = []
+                text = text.replace( patterns.code, function( full, space, content, space ) {
+                        return '{codeblockm:' + codeblocks.push(content.replace( /<br \/>/gm, '' ).trim()) + '}';
+                })
+                text = text.replace( patterns.codeSingle, function( full, space, content, space ) {
+                        return '{codeblocks:' + codeblocks.push(content.replace( /<br \/>/gm, '' ).trim()) + '}';
+                })
+                
+                var foundVideos = 0;
+                text = text.replace( patterns.url, function( url, opt, prefix, www ) {
+                        url = url.trim()
+                        if( !prefix )
+                                url = 'http://' + url
+                                
+                        if( foundVideos < 2 ) {
+                                var youtube = null, args = []
+                                if( arguments[4] == 'open.spotify' && arguments[5] == '.com' && arguments[8] && (arguments[8].substr( 0, 6 ) == '/track' || arguments[8].substr( 0, 6 ) == '/album' || arguments[8].split('/')[3] == 'playlist' ) ) {     
+                                        foundVideos++;
+                                        return '<iframe class="embed spotify" src="https://embed.spotify.com/?uri=spotify' + arguments[8].replace( /\//g, ':' ).replace( /\"/g, '' ).replace( /[^a-z\:A-Z0-9\_]+/g, '' ).trim() + '" width="300" height="80" frameborder="0" allowtransparency="true"></iframe>';
+                                }
+                                else if( arguments[4] == 'vimeo' && arguments[5] == '.com' && !isNaN( arguments[8].substr(1) ) ) {
+                                        foundVideos++;
+                                        return '<iframe class="embed youtube" src="http://player.vimeo.com/video' + arguments[8].replace( /\"/g, '' ).replace( /[^a-zA-Z0-9\_]+/g, '' ).trim() + '" width="560" height="315" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>';
+                                }
+                                else if( arguments[4] == 'youtu' && arguments[5] == '.be' && arguments[8] && arguments[8].split( '&' )[0].match(/[a-zA-Z0-9\-\/.]/) != null ) {
+                                        foundVideos++;
+                                        youtube = arguments[8].split( '&' )[0]
+                                        args = arguments[8].split( '&' ).splice(1)
+                                }
+                                else if( arguments[4] == 'youtube' && arguments[5] == '.com' && arguments[8] && arguments[8].substr( 0, 6 ) != '/watch' && arguments[8] && arguments[8].split( '/' )[2].match(/[a-zA-Z0-9\)\-\/.]/) != null ) {
+                                        foundVideos++;
+                                        youtube = arguments[8].split( '/' )[2]
+                                }
+                                else if( arguments[4] == 'youtube' && arguments[5] == '.com' && arguments[8] && arguments[8].substr( 0, 6 ) == '/watch' ) {
+                                        foundVideos++;
+                                        youtube = arguments[8].split( 'v=' )[1].split( '&amp;' )[0]
+                                        args = arguments[8].split( 'v=' )[1].split( '&amp;' ).splice(1)
+                                }
+                                if( youtube ) 
+                                        return '<iframe class="embed youtube" width="560" height="315" src="https://www.youtube-nocookie.com/embed/' + youtube.replace( /[^a-zA-Z0-9\-\_]+/g, '' ).trim() + '?theme=light" frameborder="0" allowfullscreen></iframe>';
+                                delete youtube, args
+                        }
+                        
+                        /*var urlChecker = url.replace( /http:\/\//g, '' ).replace( /https:\/\//g, '' );
+                        if( urlChecker.substr(0,12) == 'twitter.com/' ) {
+                                // Is status?
+                                var urlSplit = urlChecker.split( '/' );
+                                if( urlSplit[2] == 'status' ) {
+                                        var tweetId = urlSplit[3].replace( /[^0-9]+/g, '' ).trim(), tweetIdTime = ( tweetId + '' + new Date().getTime() );
+                                        $.get( 'http://api.twitter.com/1/statuses/oembed.json?id=' + tweetId + '&align=left&omit_script=true&callback=?', function(resp){
+                                                $( '#' + tweetIdTime ).html( resp.html )
+                                                setTimeout(function(){
+                                                        gui.conversation.emit( 'scrolldown', [maxIt] )
+                                                }, 10);
+                                        }, 'jsonp' )
+                                        return '<tweet class="tweet" id="' + tweetIdTime + '">Loading tweet..</tweet>';
+                                }
+                        }*/
+   
+                        var imgurCode;
+                        if( url.substr(7,9) == 'imgur.com' ) {
+                                // Cross request
+                                imgurCode = url.replace( /gallery\//g, empty ).substr(17)
+                                $.getJSON( 'http://api.imgur.com/2/image/' + imgurCode + '.json', function(data) {
+                                        if( data ) {
+                                                $( '#chat-content a.imgur.' + data.image.image.hash ).each(utils.scope(data,function(i,el){
+                                                        $( '<img />' ).data( 'url', this.image.links.imgur_page ).attr( 'src', this.image.links.small_square ).bind( 'load', function(){
+                                                                gui.conversation.emit( 'scrolldown', [maxIt] )
+                                                        }).click(function(){
+                                                                window.open($(this).data( 'url' ))
+                                                        }).addClass( 'thumb' ).insertBefore( el )
+                                                        $(el).remove()
+                                                }))
+                                        }
+                                })
+                        }
+                        else {
+                                var imageCheckUrl = url.split( '?' )[0],
+                                imageCheckExtensionURL = imageCheckUrl.toLowerCase()
+                                if( imageCheckExtensionURL.substr( -6 ) == ':large' || imageCheckExtensionURL.substr( -4 ) == '.png' || imageCheckExtensionURL.substr( -4 ) == '.jpg' || imageCheckExtensionURL.substr( -4 ) == '.gif' || imageCheckExtensionURL.substr( -5 ) == '.jpeg' 
+                                 || imageCheckExtensionURL.substr( -7, 4 ) == '.png' || imageCheckExtensionURL.substr( -7, 4 ) == '.jpg' || imageCheckExtensionURL.substr( -7, 4 ) == '.gif' || imageCheckExtensionURL.substr( -8, 5 ) == '.jpeg' )
+                                        return opt + '<img onerror="$(\'<i>\' + this.src.substr(7) + \'</i>\').insertBefore(this); $(this).remove(); app.scroll();" src="' + imageCheckUrl.replace( /"/, '%22' ) + '" onload="app.scroll();" class="thumb" onclick="window.open(\'' + imageCheckUrl.replace( /"/, '%22' ).replace( /'/, '\\\'' ) + '\')" />';
+                                delete imageCheckUrl, imageCheckExtensionURL 
+                        }
+                        
+                        url = $( '<div />' ).html( url ).text()
+                        return '{url:' + urls.push(opt + $( '<div />' ).append( $( '<a />' ).addClass( 'link' + ( imgurCode ? ' imgur ' + imgurCode : empty ) ).attr( 'target', '_blank' ).attr( 'href', url ).text( ( www ? url.split( '://www.' )[1] : url.split( '://' )[1] ) ) ).html()) + '}'
+                })
+                
+                //text = text.replace( patterns.name, utils.scope(me[0], function( full, name, opt ) {
+                //        return '<a class="mention" target="_blank" href="https://twitter.com/' + name.replace( /[^a-zA-Z0-9]+/g, '' ).trim() + '"><tag class="tag">@</tag>' + name + '</a>' + opt
+                //}))
+                //text = text.replace( patterns.tag, utils.scope(me[0], function( full, name, opt ) {
+                //        return '<a class="tag" target="_blank" href="http://express.mss.gs/channel/' + name.replace( /[^a-zA-Z0-9]+/g, '' ).trim() + '"><tag class="tag">#</tag>' + name + '</a>' + opt
+                //}))
+                text = text.replace( patterns.names, function( text, name ) {
+                        return '<b>' + name + '</b>'
+                })
+                text = text.replace( patterns.bold, function( text, name ) {
+                        return '<strong>' + name + '</strong>'
+                })
+                text = text.replace( patterns.indent, function( text, name ) {
+                        return '&nbsp;'
+                })
+                text = text.replace( patterns.italic, function( text, name ) {
+                        return '<i>' + name + '</i>'
+                })
+                text = text.replace( /\{codeblockm:([0-9]{0,})\}/gi, function( text, num ){
+                        return $( '<div />' ).append( $( '<pre />' ).addClass( 'multi' ).addClass( 'code' ).html( codeblocks[(num-1)] ) ).html()
+                })
+                text = text.replace( /\{codeblocks:([0-9]{0,})\}/gi, function( text, num ){
+                        return $( '<div />' ).append( $( '<pre />' ).addClass( 'single' ).addClass( 'code' ).html( codeblocks[(num-1)] ) ).html()
+                })
+                text = text.replace( /\{url:([0-9]{0,})\}/gi, function( text, num ){
+                        return urls[( num -1 )]
+                })
+                
+                return text;
+        },
         addMessage: function( who, text, avatar, date, me, init ) {
             var imgDiv  = $( '<div />' ),
                 li      = $( '<li />' ).attr( 'data-username', who ),
-                message = global.findLinks( text ),
+                message = app.renderMessage( text ),
                 p       = $( '<p />' ).html( message ),
                 d       = new Date( ( date * 1000 ) ),
-                dateV   = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ' ' + ( '0' + d.getDate() ).slice(-2) + '/' + ( '0' + d.getMonth() ).slice(-2) + '/' + d.getFullYear();
+                dateV   = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ' ' + ( '0' + d.getDate() ).slice(-2) + '/' + ( '0' + d.getMonth() ).slice(-2) + '/' + d.getFullYear(),
+                allowScroll = ( $( '#main section' ).scrollTop() == $( '#main section article.chat' ).prop( 'scrollHeight' ) ? true : false );
 
             $( '#main sidebar ul li[data-username="' + who + '"]' ).attr( 'data-date', date )
             if( $( '#main section .chat ul li:last-child' ).attr( 'data-username' ) == who ) {
@@ -164,19 +354,24 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             if( who == user.username )
                 li.addClass( 'me' );
 
-            if( !init )
-                $( '#main section' ).animate({ scrollTop: $( '#main section article.chat' ).height() }, 300);
+            if( !init /*&& allowScroll*/ ) 
+                app.scroll();
         },
         chat: function( conversation ) {
-            $( '#main article.chat' ).removeClass( 'hidden' );
-            $( '#main .chat [type="text"]' ).bind( 'keypress', function(e) {
+            $( '#main article.chat' ).removeClass( 'hidden' )
+            $( '#main' ).addClass( 'loading' );
+            setTimeout( function() { // Reasonably high timeout to make sure it happens correctly
+                $( '#main' ).removeClass( 'loading' );
+                app.scroll();
+            }, 3000 );
+            $( '#textarea' ).bind( 'keypress', function(e) {
                 var code = (e.keyCode ? e.keyCode : e.which);
-                if(code == 13) { //Enter keycode
-                    socket.emit( 'message', { 'text': $( this ).val(), 'conversation': conversation } );
-                    $( this ).val( '' );
+                if(code == 13 && !e.shiftKey) { //Enter keycode
+                    socket.emit( 'message', { 'text': $( '#textarea' ).val(), 'conversation': conversation } );
+                    $( '#textarea' ).val( "" );
+                    e.preventDefault();
                 }
             });
-            $( app.resize );
         },
         invite: function() {
             $( '#main article.invite' ).removeClass( 'hidden' );
@@ -188,6 +383,12 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                 if( user.avatar )
                     $( '#main article.settings input[name="avatar"]' ).val( user.avatar );
             }
+            $( '#main article.settings #notifications' ).bind( 'click', function() {
+                if( $( this ).is( ':checked' ) )
+                    notifications = true;
+                else
+                    notifications = false;
+            });
     		$( '#main .settings [type="submit"]' ).bind( 'click', function() {
 	    		socket.emit( 'auth', {
                     'username': $( '.settings [name="name"]' ).val(),
@@ -209,21 +410,21 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
         },
         listeners: function() {
             $( 'header sidebar ul li.invite' ).bind( 'click', function() {
-                $( app.reload );
-                $( app.invite );
+                app.reload();
+                app.invite();
             });
             $( 'header sidebar ul li.settings' ).bind( 'click', function() {
-                $( app.reload );
-                $( app.settings );
+                app.reload();
+                app.settings();
             });
             $( 'header sidebar ul li.new' ).bind( 'click', function() {
-                $( app.reload );
-                $( app.new );
+                app.reload();
+                app.new();
             });
             $( 'header .logout' ).bind( 'click', function() {
-                $( app.reload );
-                $( app.logout );
-                $( app.settings );
+                app.reload();
+                app.logout();
+                app.settings();
             });
 
             socket.on( 'auth', function( data ) {
@@ -236,23 +437,22 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     user = JSON.parse( localStorage.getItem( 'user' ) );
                     $( 'header section article h1' ).removeClass( 'hidden' ).text( user.username ).append( $( '<span />' ).addClass( 'active' ) );
                     $( 'header section article img' ).removeClass( 'hidden' ).attr( 'src', user.avatar );
-                    $( app.reload );
+                    app.reload();
                     if( conv && conv.conversation ) {
-                        $( app.chat( conv.conversation ) );
+                        app.chat( conv.conversation );
                         socket.emit( 'join conversation', { 'conversation': conv.conversation, 'password': ( localStorage.getItem( 'password' ) ? localStorage.getItem( 'password' ) : false ) } );
                     } else {
-                        $( app.new );
+                        app.new();
                     }
                 } else {
-                    $( app.reload );
-                    $( app.error( 'Invalid user' ) );
+                    app.reload();
+                    app.error( 'Invalid user' );
                 }
             } );
 
             socket.on( 'credentials', function(data) {
                 if( data.valid ) {
                     if( user && user.username ) {
-                        console.log( user );
                         socket.emit( 'auth', {
                             'username': user.username,
                             'avatar': user.avatar,
@@ -262,17 +462,17 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                         if( user.avatar )
                             $( 'header section article img' ).removeClass( 'hidden' ).attr( 'src', user.avatar );
                     } else {
-                        $( app.settings );
+                        app.settings();
                     }
                 } else {
-                    $( app.error( 'Invalid app' ) );
+                    app.error( 'Invalid app' );
                 }
             });
 
             socket.on( 'usernames', function(data) {
                 $.each( data.usernames, function(i) {
                     username = data.usernames[i];
-                    $( app.addUser( username, data.conversation ) );
+                    app.addUser( username, data.conversation );
                 });
             })
 
@@ -286,17 +486,29 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                 localStorage.setItem( 'conv', JSON.stringify( convData ) );
                 var conv = JSON.parse( localStorage.getItem( 'conv' ) );
 
-                $( app.reload );
-                $( app.chat( data.conversation ) );
+                app.reload();
+                app.chat( data.conversation );
 
-                $( 'header sidebar ul' ).append(
-                    $( '<li />' ).addClass( 'chat' ).append(
-                        $( '<span />' ).addClass( 'icon-comments-alt' )
-                    ).bind( 'click', function() {
-                        $( app.reload );
-                        $( app.chat( data.conversation ) )
-                    })
-                );
+                if( $( 'header sidebar ul li.chat' ).length ) {
+                    $( 'header sidebar ul li.chat' ).remove();
+                    $( 'header sidebar ul' ).append(
+                        $( '<li />' ).addClass( 'chat' ).append(
+                            $( '<span />' ).addClass( 'icon-comments-alt' )
+                        ).bind( 'click', function() {
+                            app.reload();
+                            app.chat( data.conversation );
+                        })
+                    );
+                } else {
+                    $( 'header sidebar ul' ).append(
+                        $( '<li />' ).addClass( 'chat' ).append(
+                            $( '<span />' ).addClass( 'icon-comments-alt' )
+                        ).bind( 'click', function() {
+                            app.reload();
+                            app.chat( data.conversation );
+                        })
+                    );
+                }
 
                 setTimeout( function() {
                     $.each( conv.activity, function(i,v) {
@@ -318,42 +530,58 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             });
 
             socket.on( 'message', function( data ) {
+                var init = false;
                 if( data.provider == 'internal' ) {
-                    $( mg.beep );
+                    app.addInternal( data.message, data.date, false );
                 } else {
                     // Notify user of name calling
-                    if( data.message.indexOf( user.username ) >= 0 || inactive ) {
-                        mg.notify( data.username, data.message );
+                    if( notifications ) {
+                        if( inactive ) {
+                            mg.notify( data.username, data.message );
+                        }
+                    } else {
+                        if( data.message.toLowerCase().indexOf( user.username.toLowerCase() ) >= 0 ) {
+                            mg.notify( data.username, data.message );
+                        }
                     }
 
                     var currentTime = Math.floor(new Date().getTime()/1000);
                     $( '#main sidebar ul li[data-username="' + data.username + '"]' ).attr( 'data-date', currentTime );
                     $( '#main sidebar ul li[data-username="' + data.username + '"] span.inactive,#main sidebar ul li[data-username="' + data.username + '"] span.away' ).removeClass( 'inactive' ).removeClass( 'away' ).addClass( 'active' );
 
-                    var init = false;
-                    $( app.addMessage( data.username, data.message, data.image, data.date, false, init ) );
+                    app.addMessage( data.username, data.message, data.image, data.date, false, init );
                 }
+
+                app.resize();
             });
 
             socket.on( 'messages', function( data ) {
                 $.each( data, function(i) {
                     message = data[i];
-                    $( app.addMessage( message.username, message.message, message.image, message.date, false, true ) );
+                    app.addMessage( message.username, message.message, message.image, message.date, false, true );
                     
-                    if( i == ( data.length - 1 ) )
-                        $( '#main section' ).animate({ scrollTop: $( '#main section article.chat' ).height() }, 300);
+                    if( i == ( data.length - 1 ) ) {
+                        app.scroll();
+                        app.resize();
+                    }
                 });
             });
 
             socket.on( 'join conversation', function(data) {
-                $( app.addUser( data.username, data.op, data.globalop, data.conversation ) );
+                app.addUser( data.username, data.op, data.globalop, data.conversation );
             });
 
             socket.on( 'leave conversation', function(data) {
-                $( app.removeUser( data.username, data.conversation ) );
+                app.removeUser( data.username, data.conversation );
             });
 
             socket.on( 'connect', function() {
+                $( 'header section article h1 span' ).removeClass( 'away' ).removeClass( 'inactive' ).addClass( 'active' );
+            });
+
+            socket.on( 'reconnect', function() {
+                app.reload();
+                app.load();
                 $( 'header section article h1 span' ).removeClass( 'away' ).removeClass( 'inactive' ).addClass( 'active' );
             });
 
@@ -372,18 +600,15 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             $( '#main sidebar' ).height( $( window ).height() - 83 );
             $( '#main section' ).height( $( window ).height() - 83 );
             $( '#main section article' ).width( $( window ).width() - 200 );
-            $( '#main section .chat ul li div:nth-child(2)' ).width( $( window ).width() - 280 );
-            if( !$( '.chat' ).hasClass( 'hidden' ) )
-                $( '#main section' ).animate({ scrollTop: $( '#main section article.chat' ).height() }, 300);
+            $( '#main section .chat ul li div:nth-child(2)' ).width( $( window ).width() - 280 );               
+        },
+        scroll: function() {
+            $( '#main section' ).animate({ scrollTop: $( '#main section article:not(.hidden)' ).prop( 'scrollHeight' ) }, 300);
         }
     };
 
 $( window ).load( function() {
     $( app.load );
-    // Resize the window and scroll to bottom
-    setTimeout( function() { // Reasonably high timeout (1s) to make sure it happens correctly
-        $( app.resize );
-    }, 1000 );
     $( mg.load );
 }).bind( 'blur', function(){
         inactive = true;
@@ -394,5 +619,6 @@ $( window ).load( function() {
 });
 
 $( window ).bind( 'resize', function(){
-	$( app.resize );
+	app.resize();
+    app.scroll();
 });
