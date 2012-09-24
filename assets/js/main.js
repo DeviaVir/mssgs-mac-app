@@ -3,6 +3,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
     conv   = JSON.parse( localStorage.getItem( 'conv' ) ),
     inactive = false,
     notifications = false,
+    badgeAmount = 0,
     hasMG  = false,
     global = { // Cool global functions
         findLinks: function(text) {
@@ -49,6 +50,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
         badge: function( amount ) {
             if( hasMG ) {
                 macgap.dock.badge = amount;
+                badgeAmount = amount;
             }
         },
         quit: function() {
@@ -76,6 +78,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
     	load: function() {
             app.listeners();
             app.resize();
+            /*$(".nano").nanoScroller();*/
 
             // Clear messages
             $( '#main section .chat ul' ).children().remove();
@@ -110,8 +113,8 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
 
         },
         addUser: function( username, globalop, op, conversation, avatar ) {
-            if( !$( '#main sidebar ul li[data-username="' + username + '"]' ).length ) {
-                var li   = $( '<li />' ).attr( 'data-username', username ),
+            if( !$( '#main sidebar ul li[data-username="' + username.toLowerCase() + '"]' ).length ) {
+                var li   = $( '<li />' ).attr( 'data-username', username.toLowerCase() ),
                     span = $( '<span />' ).addClass( 'active' ),
                     img  = $( '<img />' ).attr( {
                         'width': 32,
@@ -129,7 +132,7 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             }
         },
         removeUser: function( username, conversation ) {
-            $( '#main sidebar ul li[data-username="' + username + '"]' ).remove();
+            $( '#main sidebar ul li[data-username="' + username.toLowerCase() + '"]' ).remove();
         },
         addInternal: function( message, date, init ) {
             var li   = $( '<li />' ).addClass( 'internal' ),
@@ -314,15 +317,15 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
         },
         addMessage: function( who, text, avatar, date, me, init ) {
             var imgDiv  = $( '<div />' ),
-                li      = $( '<li />' ).attr( 'data-username', who ),
+                li      = $( '<li />' ).attr( 'data-username', who.toLowerCase() ),
                 message = app.renderMessage( text ),
                 p       = $( '<p />' ).html( message ),
                 d       = new Date( ( date * 1000 ) ),
                 dateV   = ( '0' + d.getHours() ).slice(-2) + ':' + ( '0' + d.getMinutes() ).slice(-2) + ' ' + ( '0' + d.getDate() ).slice(-2) + '/' + ( '0' + d.getMonth() ).slice(-2) + '/' + d.getFullYear(),
                 allowScroll = ( $( '#main section' ).scrollTop() == $( '#main section article.chat' ).prop( 'scrollHeight' ) ? true : false );
 
-            $( '#main sidebar ul li[data-username="' + who + '"]' ).attr( 'data-date', date )
-            if( $( '#main section .chat ul li:last-child' ).attr( 'data-username' ) == who ) {
+            $( '#main sidebar ul li[data-username="' + who.toLowerCase() + '"]' ).attr( 'data-date', date )
+            if( $( '#main section .chat ul li:last-child' ).attr( 'data-username' ) == who.toLowerCase() ) {
                 $( '#main section .chat ul li:last-child div:nth-child(2)' ).append(
                     $( '<span />' ).text( dateV )
                 );
@@ -512,15 +515,16 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
 
                 setTimeout( function() {
                     $.each( conv.activity, function(i,v) {
-                        var userLi = $( '#main sidebar ul li[data-username="' + i + '"]' ).attr( 'data-date', v );   
+                        var userLi = $( '#main sidebar ul li[data-username="' + i.toLowerCase() + '"]' );  
 
                         setInterval( function() {
-                            var currentTime = Math.floor(new Date().getTime()/1000);
-                            if( (currentTime - conv.activity[i]) > (60*60) )
+                            var currentTime = Math.floor(new Date().getTime()/1000),
+                                oldTime = ( userLi.attr( 'data-date' ) > conv.activity[i] ? userLi.attr( 'data-date' ) : conv.activity[i] );
+                            if( (currentTime - oldTime) > (60*60) )
                                 userLi.children( 'span' ).removeClass( 'active' ).addClass( 'away' ).removeClass( 'inactive' );
-                            else if( (currentTime - conv.activity[i]) > (60*15) )
+                            else if( (currentTime - oldTime) > (60*15) )
                                 userLi.children( 'span' ).removeClass( 'active' ).removeClass( 'away' ).addClass( 'inactive' );
-                            else if( (currentTime - conv.activity[i]) > (60*5) )
+                            else if( (currentTime - oldTime) > (60*5) )
                                 userLi.children( 'span' ).removeClass( 'active' ).removeClass( 'away' ).addClass( 'inactive' );
                             else
                                 userLi.children( 'span' ).addClass( 'active' ).removeClass( 'away' ).removeClass( 'inactive' );
@@ -546,11 +550,14 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     }
 
                     var currentTime = Math.floor(new Date().getTime()/1000);
-                    $( '#main sidebar ul li[data-username="' + data.username + '"]' ).attr( 'data-date', currentTime );
-                    $( '#main sidebar ul li[data-username="' + data.username + '"] span.inactive,#main sidebar ul li[data-username="' + data.username + '"] span.away' ).removeClass( 'inactive' ).removeClass( 'away' ).addClass( 'active' );
+                    $( '#main sidebar ul li[data-username="' + data.username.toLowerCase() + '"]' ).attr( 'data-date', currentTime );
+                    $( '#main sidebar ul li[data-username="' + data.username.toLowerCase() + '"] span.inactive,#main sidebar ul li[data-username="' + data.username.toLowerCase + '"] span.away' ).removeClass( 'inactive' ).removeClass( 'away' ).addClass( 'active' );
 
                     app.addMessage( data.username, data.message, data.image, data.date, false, init );
                 }
+
+                if( inactive )
+                    mg.badge( (badgeAmount + 1) );
 
                 app.resize();
             });
@@ -614,8 +621,10 @@ $( window ).load( function() {
         inactive = true;
 }).bind( 'focus', function(){
         inactive = false;
+        mg.badge( 0 );
 }).bind( 'click', function(){
         inactive = false;
+        mg.badge( 0 );
 });
 
 $( window ).bind( 'resize', function(){
