@@ -162,6 +162,10 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     type    = 'Kicked:';
                     message = message.username;
                 break;
+                case 'me':
+                    type = message.username;
+                    message = message.message;
+                break;
             }
 
             if( !skip ) {
