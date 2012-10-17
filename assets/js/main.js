@@ -560,10 +560,10 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
                     app.addMessage( data.username, data.message, data.image, data.date, false, init );
                 }
 
-                if( inactive )
-                    mg.badge( (badgeAmount + 1) );
+                //if( inactive )
+                //    mg.badge( (badgeAmount + 1) );
 
-                app.resize();
+                //app.resize();
             });
 
             socket.on( 'messages', function( data ) {
@@ -625,10 +625,10 @@ $( window ).load( function() {
         inactive = true;
 }).bind( 'focus', function(){
         inactive = false;
-        mg.badge( 0 );
+        //mg.badge( 0 );
 }).bind( 'click', function(){
         inactive = false;
-        mg.badge( 0 );
+        //mg.badge( 0 );
 });
 
 $( window ).bind( 'resize', function(){
