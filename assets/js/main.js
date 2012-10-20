@@ -373,9 +373,9 @@ var socket = io.connect( 'api.mss.gs', { port: 443, secure: true, reconnect: tru
             }, 3000 );
             $( '#textarea' ).bind( 'keypress', function(e) {
                 var code = (e.keyCode ? e.keyCode : e.which);
-                if(code == 13 && !e.shiftKey) { //Enter keycode
+                if( $( this ).val() && code == 13 && !e.shiftKey ) {
                     socket.emit( 'message', { 'text': $( '#textarea' ).val(), 'conversation': conversation } );
-                    $( '#textarea' ).val( "" );
+                    $( this ).val( "" );
                     e.preventDefault();
                 }
             });
